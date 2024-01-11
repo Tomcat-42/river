@@ -32,6 +32,7 @@ const util = @import("util.zig");
 
 const Config = @import("Config.zig");
 const DragIcon = @import("DragIcon.zig");
+const Keyboard = @import("Keyboard.zig");
 const LayerSurface = @import("LayerSurface.zig");
 const LockSurface = @import("LockSurface.zig");
 const Output = @import("Output.zig");
@@ -559,7 +560,8 @@ fn handleTouchFrame(listener: *wl.Listener(void)) void {
 /// was a mapping and the button was handled.
 fn handlePointerMapping(self: *Self, event: *wlr.Pointer.event.Button, view: *View) bool {
     const wlr_keyboard = self.seat.wlr_seat.getKeyboard() orelse return false;
-    const modifiers = wlr_keyboard.getModifiers();
+    const keyboard: *Keyboard = @ptrFromInt(wlr_keyboard.data);
+    const modifiers = keyboard.getModifiers();
 
     const fullscreen = view.current.fullscreen or view.pending.fullscreen;
 

@@ -95,7 +95,7 @@ fn handleKey(listener: *wl.Listener(*wlr.Keyboard.event.Key), event: *wlr.Keyboa
     // Translate libinput keycode -> xkbcommon
     const keycode = event.keycode + 8;
 
-    const modifiers = wlr_keyboard.getModifiers();
+    const modifiers = self.getModifiers();
     const released = event.state == .released;
 
     // We must ref() the state here as a mapping could change the keyboard layout.
@@ -201,4 +201,27 @@ fn getInputMethodGrab(self: Self) ?*wlr.InputMethodV2.KeyboardGrab {
         }
     }
     return null;
+}
+
+/// Unlike wlr.Keyboard.getModifiers(), this function includes active locked
+/// modifiers such as capslock/numlock
+pub fn getModifiers(self: Self) wlr.Keyboard.ModifierMask {
+    const wlr_keyboard = self.device.wlr_device.toKeyboard();
+
+    log.debug("locked mask = {b}", .{wlr_keyboard.modifiers.locked});
+
+    const mask = wlr_keyboard.modifiers.depressed |
+        wlr_keyboard.modifiers.latched |
+        wlr_keyboard.modifiers.locked;
+
+    var modifiers: u32 = 0;
+    for (0..8) |i| {
+        if (wlr_keyboard.mod_indexes[i] != xkb.mod_invalid and
+            (mask & (@as(u32, 1) << @intCast(wlr_keyboard.mod_indexes[i]))) != 0)
+        {
+            modifiers |= (@as(u32, 1) << @intCast(i));
+        }
+    }
+
+    return @bitCast(modifiers);
 }
